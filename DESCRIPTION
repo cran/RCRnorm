@@ -1,0 +1,21 @@
+Package: RCRnorm
+Title: An Integrated Regression Model for Normalizing 'NanoString
+        nCounter' Data
+Version: 0.0.1
+Authors@R: c(person("Gaoxiang", "Jia", email = "GJia@SMU.edu", role = c("aut", "cre")), 
+    person("Xinlei", "Wang", email = "swang@SMU.edu", role = "aut"),
+    person("Guanghua", "Xiao", email = "Guanghua.Xiao@UTSouthwestern.edu", role = "aut"))
+Author: Gaoxiang Jia [aut, cre],
+    Xinlei Wang [aut],
+    Guanghua Xiao [aut]
+Maintainer: Gaoxiang Jia <GJia@SMU.edu>
+Description: 'NanoString nCounter' is a medium-throughput platform that measures gene or microRNA expression levels. Here is a publication that introduces this platform: Malkov (2009) <doi:10.1186/1756-0500-2-80>. Here is the webpage of 'NanoString nCounter' where you can find detailed information about this platform <https://www.nanostring.com/scientific-content/technology-overview/ncounter-technology>. It has great clinical application, such as diagnosis and prognosis of cancer. Implements integrated system of random-coefficient hierarchical regression model to normalize data from 'NanoString nCounter' platform so that noise from various sources can be removed.
+Depends: R (>= 2.15.0), truncnorm
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+NeedsCompilation: no
+Packaged: 2018-01-15 15:32:02 UTC; gjia
+Repository: CRAN
+Date/Publication: 2018-01-15 15:51:04 UTC
