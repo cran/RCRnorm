@@ -1,5 +1,5 @@
 
-
+#get coefficient of linear regression from positive ctrl
 fitWithPosCtrl = function(y, x)
 {
   mod1 = stats::lm(y ~ x)
@@ -7,12 +7,13 @@ fitWithPosCtrl = function(y, x)
   unname(coefs)
 }
 
-
+#get prior range of uniform distribution
 get_range = function(x, mm = 5)
 {
   c(mean(x)-mm*stats::sd(x), mean(x)+mm*stats::sd(x))
 }
 
+#get residual from positive ctrl fitted with simple linear regression
 get_residual = function(log_dat, RNA_conc, coefs)
   #in matrix format
 {
@@ -37,13 +38,17 @@ get_residual = function(log_dat, RNA_conc, coefs)
 #'RNA amount vector supplied to the function.
 #'@param pos_conc A vector of log10 RNA amount of the positive controls. The order of these controls should be the same as the rows of positive control
 #'data in dat. The defaut is: log10(c(128, 32, 8, 2, 0.5, 0.125)).
-#'@param iter Total number of iterations for Monte Carlo simulation. Default is 1000.
-#'@param warmup Number of burnin cycles for Monte Carlo simulation. Default is 500.
+#'@param iter Total number of iterations for Monte Carlo simulation. Default is 8000.
+#'@param warmup Number of burnin cycles for Monte Carlo simulation. Default is 5000.
 #'@param seed Seed for the MCMC sampling for reproducibility. Default is 1.
 #'@param random_init Whether to estimate the starting point from data
 #'@param all_dat Whether should all data be used to update a_i and b_i.
 #'@param mm Number of standard deviations for the prior uniform range.
 #'@param m_ab Number of variance for the prior distribution of mu_a and mu_b.
+#'@param fast_method Logical flag; set to FALSE by default; when set to TRUE, the algorithm will implement a very fast method to estimate
+#'the normalized gene expression levels. It will first estimate sample specific slope and intercept from positive controls and then get the RNA
+#'levels of regular genes with the intercepts and slopes. Then two way anova will be performed on the RNA levels. The residuals from two way anova where
+#'sample effects and gene effects are removed will be the normalized expression levels of regular genes.
 #'@details 'NanoString nCounter' platform includes several internal controls (Positive control; Negative control; Housekeeping genes) to remove noise and normalize data to enable inter-patient
 #'gene expression comparasion: 1. removing lane-by-lane experimental variation with positive controls;
 #'2. removing background noise introduced by none specific binding with negative controls;
@@ -51,7 +56,8 @@ get_residual = function(log_dat, RNA_conc, coefs)
 #'Our IBMnorm model integrates information from these 3 types of internal controls and get the normalized expression levels of genes we are interested in.
 #'Detailed models are in the publication.
 #'@return The function returns a list of elements including: summary statistics of key parameters in the model and a list of MCMC samples. The number of MCMC samples
-#'equals iter-warmup.
+#'equals iter-warmup. If fast_method flag is set to TRUE, only normalized expression level matrix of regular genes will be returned with each column being a sample and
+#'each row being a gene.
 #'@export
 #'@examples
 #'data(FFPE_dat)
@@ -59,7 +65,7 @@ get_residual = function(log_dat, RNA_conc, coefs)
 #'@import truncnorm
 
 
-RCRnorm = function(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)),
+RCRnorm = function(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)), fast_method = FALSE,
                    iter = 8000, warmup = 5000, random_init = F, all_dat = T, seed = 1, mm = 3, m_ab = 9)
 {
   ptm <- proc.time()
@@ -125,6 +131,14 @@ RCRnorm = function(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)),
   #estimate patient effect range by two way ANOVA with patient's regular gene expression level.
   gene = factor(rep(1:n_reg, n_patient))
   patient = factor(rep(1:n_patient, each = n_reg))
+
+  if (fast_method == TRUE)
+  {
+    normalized = stats::resid(stats::lm(unlist(reg_RNA) ~ patient + gene, contrasts = list(patient = 'contr.sum', gene = 'contr.sum')))
+    norm_dat = matrix(normalized, nrow = n_reg)
+    return(norm_dat)
+  }
+
   mod = stats::lm(unlist(reg_RNA) ~ patient + gene, contrasts = list(patient = 'contr.sum', gene = 'contr.sum'))
 
   phi = numeric(n_patient)
@@ -159,6 +173,8 @@ RCRnorm = function(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)),
   sigma2d_neg = numeric(iter_keep)
   sigma2d_phr = numeric(iter_keep)
 
+  if (fast_method == TRUE) random_init == F
+
   if (random_init == T)
   {
     # mu_a_itm = stats::runif(1, 1, 4)
@@ -192,6 +208,7 @@ RCRnorm = function(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)),
     sigma2e_neg_itm = stats::runif(1, 0, .1)
     sigma2e_phr_itm = stats::runif(1, 0, .1)
   }
+
 
   #get initial values; itm: intermediate
   if (random_init == F)

@@ -4,9 +4,9 @@
 \alias{RCRnorm}
 \title{An Integrated Regression Model for Normalizing 'NanoString nCounter' Data}
 \usage{
-RCRnorm(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)), iter = 8000,
-  warmup = 5000, random_init = F, all_dat = T, seed = 1, mm = 3,
-  m_ab = 9)
+RCRnorm(dat, pos_conc = log10(c(128, 32, 8, 2, 0.5, 0.125)),
+  fast_method = FALSE, iter = 8000, warmup = 5000, random_init = F,
+  all_dat = T, seed = 1, mm = 3, m_ab = 9)
 }
 \arguments{
 \item{dat}{A list containing data for the 4 probe types: positive control, negative control, housekeeping gene and regular gene.
@@ -19,9 +19,14 @@ RNA amount vector supplied to the function.}
 \item{pos_conc}{A vector of log10 RNA amount of the positive controls. The order of these controls should be the same as the rows of positive control
 data in dat. The defaut is: log10(c(128, 32, 8, 2, 0.5, 0.125)).}
 
-\item{iter}{Total number of iterations for Monte Carlo simulation. Default is 1000.}
+\item{fast_method}{Logical flag; set to FALSE by default; when set to TRUE, the algorithm will implement a very fast method to estimate
+the normalized gene expression levels. It will first estimate sample specific slope and intercept from positive controls and then get the RNA
+levels of regular genes with the intercepts and slopes. Then two way anova will be performed on the RNA levels. The residuals from two way anova where
+sample effects and gene effects are removed will be the normalized expression levels of regular genes.}
 
-\item{warmup}{Number of burnin cycles for Monte Carlo simulation. Default is 500.}
+\item{iter}{Total number of iterations for Monte Carlo simulation. Default is 8000.}
+
+\item{warmup}{Number of burnin cycles for Monte Carlo simulation. Default is 5000.}
 
 \item{random_init}{Whether to estimate the starting point from data}
 
@@ -35,7 +40,8 @@ data in dat. The defaut is: log10(c(128, 32, 8, 2, 0.5, 0.125)).}
 }
 \value{
 The function returns a list of elements including: summary statistics of key parameters in the model and a list of MCMC samples. The number of MCMC samples
-equals iter-warmup.
+equals iter-warmup. If fast_method flag is set to TRUE, only normalized expression level matrix of regular genes will be returned with each column being a sample and
+each row being a gene.
 }
 \description{
 'NanoString nCounter' is a medium-throughput platform that measures gene or microRNA expression levels.
